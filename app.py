@@ -1,16 +1,40 @@
-# from sklearn.externals import joblib
 import numpy as np
 import pandas as pd
-from numpy import loadtxt
-import joblib
-from flask import Flask, jsonify, request, render_template
 import pickle
+from nltk.tokenize import WhitespaceTokenizer
+import joblib
+from sklearn.preprocessing import StandardScaler
+from flask import Flask, jsonify, request, render_template
+import re
+import time
 
-model=joblib.load('Mango_UV_ShelfLife.pkl')
 
-scaler=joblib.load('Mango_UV_ShelfLife_scale.pkl')
 
-pca=joblib.load('Mango_UV_ShelfLife_pca.pkl')
+tk = WhitespaceTokenizer()
+scaler = StandardScaler(with_mean = False)
+model = joblib.load('feature.pkl')
+tfid = joblib.load('tfid.pkl')
+scaler = joblib.load('scaler.pkl')
+
+#func
+def wordToken(text):
+  tokens = tk.tokenize(text)
+  return tokens
+
+stopword_list= ["\n", "\t", "<", ">", "+", "-", "*", "%", "=", "==", "."]
+def removeStopWords(text):
+  new_tokens = [word for word in text if word.lower() not in stopword_list]
+  return new_tokens
+
+#func
+def removeNum(text):
+  NumRemoved = []
+  for x in text:
+    x = re.sub('\d+', 'N', x)
+    x = re.sub('N,N', 'N', x)
+    x = re.sub('N.N', 'N', x)
+    NumRemoved.append(x)
+  return NumRemoved
 
 # app
 app = Flask(__name__)
@@ -21,25 +45,38 @@ def home():
 
 # routes
 @app.route('/predict',methods=['POST'])
-
-
-
 def predict():
-	data = request.form.getlist('UV data')
+	# global tfid, scaler
+	
+	start_time = time.time()
 
-	X=data[0].split()
-	X=np.array(X).astype(float)
+	data = request.form.get('Enter Code')
+	txt = wordToken(data)
+	txt = removeStopWords(txt)
+	txt = removeNum(txt)
+	txt = [" ".join(txt)]
+	txt = tfid.transform(txt)
+	txt = scaler.transform(txt)
+	result = model.predict(txt)
+	output = int(result[0])
 
-	X_1=X[0:288].reshape(1,-1)
-	X_scaled=scaler.transform(X_1)
-	X_pca=pca.transform(X_scaled)
-	result=model.predict(X_pca)
+	if output == 0:
+		result = "csproj"
+	elif output == 1:
+		result = "jenkinsfile"
+	elif output == 2:
+		result = "kt"
+	elif output == 3:
+		result = "mak"
+	elif output == 4:
+		result = "ml"
+	elif output == 5:
+		result = "rexx"
 
-	# # output = {'results': int(result[0])}
-	output=int(result[0])
+	end_time = time.time()
+	total_time = end_time - start_time
 
-	# return jsonify(results=output)
-	return render_template('index.html', prediction_text='Output is: {}'.format(output))
+	return render_template('index.html', prediction_text = 'Language is: {}  \n    Time execution is: {}'.format(result, total_time))
 
 if __name__ == "__main__":
     app.run(debug=True)

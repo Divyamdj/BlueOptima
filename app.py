@@ -1,37 +1,16 @@
+# from sklearn.externals import joblib
 import numpy as np
 import pandas as pd
-import pickle
-from nltk.tokenize import WhitespaceTokenizer
+from numpy import loadtxt
 import joblib
-from sklearn.preprocessing import StandardScaler
 from flask import Flask, jsonify, request, render_template
-import re
+import pickle
 
-tk = WhitespaceTokenizer()
-scaler = StandardScaler(with_mean = False)
-model = joblib.load('feature.pkl')
-tfid = joblib.load('tfid.pkl')
-scaler = joblib.load('scaler.pkl')
+model=joblib.load('Mango_UV_ShelfLife.pkl')
 
-#func
-def wordToken(text):
-  tokens = tk.tokenize(text)
-  return tokens
+scaler=joblib.load('Mango_UV_ShelfLife_scale.pkl')
 
-stopword_list= ["\n", "\t", "<", ">", "+", "-", "*", "%", "=", "==", "."]
-def removeStopWords(text):
-  new_tokens = [word for word in text if word.lower() not in stopword_list]
-  return new_tokens
-
-#func
-def removeNum(text):
-  NumRemoved = []
-  for x in text:
-    x = re.sub('\d+', 'N', x)
-    x = re.sub('N,N', 'N', x)
-    x = re.sub('N.N', 'N', x)
-    NumRemoved.append(x)
-  return NumRemoved
+pca=joblib.load('Mango_UV_ShelfLife_pca.pkl')
 
 # app
 app = Flask(__name__)
@@ -42,18 +21,25 @@ def home():
 
 # routes
 @app.route('/predict',methods=['POST'])
+
+
+
 def predict():
-	# global tfid, scaler
-	data = request.form.get('bo data')
-	txt = wordToken(data)
-	txt = removeStopWords(txt)
-	txt = removeNum(txt)
-	txt = [" ".join(txt)]
-	txt = tfid.transform(txt)
-	txt = scaler.transform(txt)
-	result = model.predict(txt)
-	output = int(result[0])
-	return render_template('index.html', prediction_text = 'Output is: {}'.format(output))
+	data = request.form.getlist('UV data')
+
+	X=data[0].split()
+	X=np.array(X).astype(float)
+
+	X_1=X[0:288].reshape(1,-1)
+	X_scaled=scaler.transform(X_1)
+	X_pca=pca.transform(X_scaled)
+	result=model.predict(X_pca)
+
+	# # output = {'results': int(result[0])}
+	output=int(result[0])
+
+	# return jsonify(results=output)
+	return render_template('index.html', prediction_text='Output is: {}'.format(output))
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -12,7 +12,7 @@ import os
 
 tk = WhitespaceTokenizer()
 scaler = StandardScaler(with_mean = False)
-model = joblib.load('feature.pkl')
+model = joblib.load('model.pkl')
 tfid = joblib.load('tfid.pkl')
 scaler = joblib.load('scaler.pkl')
 

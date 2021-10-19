@@ -9,7 +9,9 @@ In this project, we are using machine learning based model capable of classifyni
 - rexx
 
 It has 3 pickle file for prediction:
-- 
+- scaler.pkl
+- tfid.pkl
+- feature.pkl
 
 Web App Link:
 https://blueoptima-heroku.herokuapp.com/

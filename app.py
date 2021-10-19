@@ -7,8 +7,8 @@ from sklearn.preprocessing import StandardScaler
 from flask import Flask, jsonify, request, render_template
 import re
 import time
-
-
+import psutil
+import os
 
 tk = WhitespaceTokenizer()
 scaler = StandardScaler(with_mean = False)
@@ -74,9 +74,9 @@ def predict():
 		result = "rexx"
 
 	end_time = time.time()
-	total_time = end_time - start_time
+	total_time = 1/(end_time - start_time)
 
-	return render_template('index.html', prediction_text = 'Language is: {}  \n    Time execution is: {}'.format(result, total_time))
+	return render_template('index.html', prediction_text = 'Language is: {}  \n    Number of Execution(per sec): {}\n   RAM percentage used: {} '.format(result, total_time, psutil.cpu_percent(2)))
 
 if __name__ == "__main__":
     app.run(debug=True)
